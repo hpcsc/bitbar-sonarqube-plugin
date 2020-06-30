@@ -1,0 +1,49 @@
+project_name: bitbar-sonarqube-plugin
+
+containers:
+  bats:
+    build_directory: .
+    dockerfile: "./dockerfiles/bats.Dockerfile"
+    volumes:
+      - local: ./src
+        container: /code/src
+        options: cached
+      - local: ./tests
+        container: /code/tests
+        options: cached
+    working_directory: /code
+
+  sonarqube:
+    build_directory: .
+    dockerfile: "./dockerfiles/sonarqube.Dockerfile"
+    volumes:
+      - local: ./scripts
+        container: /app/scripts
+    ports:
+      - local: 9000
+        container: 9000
+
+  sonar-scanner-cli:
+    build_directory: .
+    dockerfile: "./dockerfiles/sonar-scanner.Dockerfile"
+    volumes:
+      - local: ./
+        container: /app
+
+tasks:
+  test:
+    description: run tests
+    run:
+      container: bats
+      command: /code/tests/sonarqube-status-tests.sh
+
+  start:
+    description: run sonarqube locally
+    run:
+      container: sonar-scanner-cli
+      command: /app/scripts/scan.sh
+      environment:
+        SONARQUBE_URL: sonarqube:9000
+    dependencies:
+      - sonarqube
+

@@ -1,0 +1,11 @@
+{
+    "token": "your-sonarqube-user-token",
+    "server": "http://your-sonarqube-server-without-trailing-slash",
+    "projectKeys": [
+        "sonarqube-project-key-1",
+        "sonarqube-project-key-2"
+    ],
+    "from": "09:00",
+    "until": "17:00",
+    "daysOfWeek": "1,2,3,4,5"
+}
