@@ -126,6 +126,30 @@ EOF
   assert_output --partial 'error 1, error 2'
 }
 
+@test "return access denied if response contains access denied" {
+  curl() {
+    echo '<HTML><HEAD><TITLE>Access Denied</TITLE></HEAD><BODY><H1>Access Denied</H1>You don''t have permission to access</BODY></HTML>'
+  }
+  export -f curl
+CONFIG=$(cat <<'EOF'
+{
+    "token": "some-token",
+    "server": "http://localhost:9000",
+    "projectKeys": [
+        "bitbar-sonarqube-plugin"
+    ]
+}
+EOF
+)
+
+  BASE_DIR=$(dirname ${BATS_TEST_DIRNAME})
+  run ${BASE_DIR}/src/sonarqube-status.1h.sh <(echo ${CONFIG})
+
+  assert_success
+  assert_output --partial 'Access Denied'
+}
+
+
 @test "return links to measures" {
   curl() {
     source 'tests/fake-sonarqube-response-generator.sh'

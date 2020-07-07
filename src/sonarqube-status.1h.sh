@@ -54,7 +54,7 @@ if [[ -n "${DAYS_OF_WEEK}" ]] && [[ "${DAYS_OF_WEEK}," != *"$(date '+%u'),"* ]];
     exit 0
 fi;
 
-echo "Sonarqube"
+echo "Sonarqube | color=green"
 echo "---"
 
 for PROJECT_KEY in ${PROJECT_KEYS}; do
@@ -67,23 +67,31 @@ for PROJECT_KEY in ${PROJECT_KEYS}; do
 
     if [[ $? -ne 0 ]]; then
         echo "Unable to reach Sonarqube | color=red"
+        break
     else
-        if [[ "${DATA}" =~ "error" ]]; then
-            ERROR=$(echo "${DATA}" | jq -r '[.errors[].msg] | join(", ")')
-            echo "${ERROR} | color=red"
-        else
-            PROJECT_NAME=$(echo ${DATA} | jq -r '.component.name')
-            CODE_SMELLS=$(echo ${DATA} | jq -r '.component.measures[] | select(.metric == "code_smells") | .value')
-            VULNERABILITIES=$(echo ${DATA} | jq -r '.component.measures[] | select(.metric == "vulnerabilities") | .value')
-            DUPLICATED=$(echo ${DATA} | jq -r '.component.measures[] | select(.metric == "duplicated_lines_density") | .value')
-            COVERAGE=$(echo ${DATA} | jq -r '.component.measures[] | select(.metric == "coverage") | .value')
+        case "${DATA}" in
+            *"error"*)
+                ERROR=$(echo "${DATA}" | jq -r '[.errors[].msg] | join(", ")')
+                echo "${ERROR} | color=red"
+                ;;
+            *"Access Denied"*)
+                echo "Access Denied | color=red"
+                break
+                ;;
+            *)
+                PROJECT_NAME=$(echo ${DATA} | jq -r '.component.name')
+                CODE_SMELLS=$(echo ${DATA} | jq -r '.component.measures[] | select(.metric == "code_smells") | .value')
+                VULNERABILITIES=$(echo ${DATA} | jq -r '.component.measures[] | select(.metric == "vulnerabilities") | .value')
+                DUPLICATED=$(echo ${DATA} | jq -r '.component.measures[] | select(.metric == "duplicated_lines_density") | .value')
+                COVERAGE=$(echo ${DATA} | jq -r '.component.measures[] | select(.metric == "coverage") | .value')
 
-            echo "${PROJECT_NAME} | href=${SERVER}/dashboard?id=${PROJECT_KEY}"
-            echo "-- ${CODE_SMELLS} code smells | href=${SERVER}/project/issues?id=${PROJECT_KEY}&resolved=false&types=CODE_SMELL"
-            echo "-- ${VULNERABILITIES} vulnerabilities | href=${SERVER}/project/issues?id=${PROJECT_KEY}&resolved=false&types=VULNERABILITY"
-            echo "-- ${DUPLICATED}% duplicates | href=${SERVER}/component_measures?id=${PROJECT_KEY}&metric=duplicated_lines_density&view=list"
-            echo "-- ${COVERAGE}% coverage | href=${SERVER}/component_measures?id=${PROJECT_KEY}&metric=coverage&view=list"
-        fi;
+                echo "${PROJECT_NAME} | href=${SERVER}/dashboard?id=${PROJECT_KEY}"
+                echo "-- ${CODE_SMELLS} code smells | href=${SERVER}/project/issues?id=${PROJECT_KEY}&resolved=false&types=CODE_SMELL"
+                echo "-- ${VULNERABILITIES} vulnerabilities | href=${SERVER}/project/issues?id=${PROJECT_KEY}&resolved=false&types=VULNERABILITY"
+                echo "-- ${DUPLICATED}% duplicates | href=${SERVER}/component_measures?id=${PROJECT_KEY}&metric=duplicated_lines_density&view=list"
+                echo "-- ${COVERAGE}% coverage | href=${SERVER}/component_measures?id=${PROJECT_KEY}&metric=coverage&view=list"
+                ;;
+        esac
     fi;
 done;
 
